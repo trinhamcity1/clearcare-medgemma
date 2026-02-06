@@ -1,5 +1,4 @@
 import json
-import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,7 +26,6 @@ def ensure_case_folder(case_name: str) -> Path:
     case_dir = base / safe
     case_dir.mkdir(parents=True, exist_ok=True)
 
-    # per-role subfolders
     (case_dir / "patient_uploads").mkdir(exist_ok=True)
     (case_dir / "clinic_a_uploads").mkdir(exist_ok=True)
     (case_dir / "clinic_b_uploads").mkdir(exist_ok=True)
@@ -42,7 +40,6 @@ def load_case_state(case_dir: Path) -> dict:
     p = case_json_path(case_dir)
     if p.exists():
         return json.loads(p.read_text(encoding="utf-8"))
-    # default state
     return {
         "case_name": case_dir.name,
         "created_at": now_iso(),
@@ -55,7 +52,7 @@ def load_case_state(case_dir: Path) -> dict:
             "clinic_a_files": [],
             "clinic_b_files": [],
         },
-        "audit": [],  # simple event log
+        "audit": [],
     }
 
 def save_case_state(case_dir: Path, state: dict) -> None:
@@ -68,26 +65,26 @@ def log_event(state: dict, event: str, actor_role: str) -> None:
 def list_files(folder: Path) -> list:
     if not folder.exists():
         return []
-    files = []
-    for f in sorted(folder.iterdir()):
-        if f.is_file():
-            files.append(f.name)
-    return files
+    return [f.name for f in sorted(folder.iterdir()) if f.is_file()]
 
 def save_uploaded_files(uploaded_files, dst_folder: Path) -> list:
     saved = []
     dst_folder.mkdir(parents=True, exist_ok=True)
 
     for uf in uploaded_files:
-        # Streamlit UploadedFile: uf.name, uf.getbuffer()
         safe_name = re.sub(r"[^a-zA-Z0-9._\- ]", "", uf.name).strip()
         if not safe_name:
             safe_name = f"upload_{int(datetime.now().timestamp())}.bin"
         out_path = dst_folder / safe_name
-        with open(out_path, "wb") as f:
-            f.write(uf.getbuffer())
+        out_path.write_bytes(uf.getbuffer())
         saved.append(out_path.name)
     return saved
+
+def refresh_upload_lists(case_dir: Path, state: dict) -> dict:
+    state["uploads"]["patient_files"]  = list_files(case_dir / "patient_uploads")
+    state["uploads"]["clinic_a_files"] = list_files(case_dir / "clinic_a_uploads")
+    state["uploads"]["clinic_b_files"] = list_files(case_dir / "clinic_b_uploads")
+    return state
 
 
 # =========================
@@ -97,7 +94,7 @@ st.set_page_config(page_title="ClearCare", page_icon="🩺", layout="centered")
 st.title("🩺 ClearCare")
 st.caption("Prototype: role-based workflow (no real authentication)")
 
-# Session state init
+# Session init
 if "role" not in st.session_state:
     st.session_state.role = "Patient"
 if "case_name" not in st.session_state:
@@ -105,7 +102,7 @@ if "case_name" not in st.session_state:
 if "case_dir" not in st.session_state:
     st.session_state.case_dir = None
 
-# ----- Step 1 UI (Role + Case) -----
+# ----- Step 1: Role + Case -----
 with st.container(border=True):
     st.subheader("Step 1: Select role + case")
 
@@ -138,31 +135,37 @@ if start:
     try:
         case_dir = ensure_case_folder(st.session_state.case_name)
         st.session_state.case_dir = str(case_dir)
-        # ensure case.json exists
         state = load_case_state(case_dir)
+        state = refresh_upload_lists(case_dir, state)
         save_case_state(case_dir, state)
         st.success(f"Case ready: `{case_dir}`")
     except Exception as e:
         st.error(str(e))
 
-# Stop if no case
 if not st.session_state.case_dir:
     st.info("Create / load a case to continue.")
     st.stop()
 
 case_dir = Path(st.session_state.case_dir)
 state = load_case_state(case_dir)
+state = refresh_upload_lists(case_dir, state)
+save_case_state(case_dir, state)
 
-# Sidebar navigation (Step 2 added: Patient page)
+# Sidebar nav
 st.sidebar.header("Navigation")
 page = st.sidebar.radio(
     "Go to",
-    options=["Patient: Request & Upload", "Status"],
+    options=[
+        "Patient: Request & Upload",
+        "Clinic A: Notifications & Upload",
+        "Clinic B: Notifications & Upload",
+        "Status",
+    ],
     index=0,
 )
 
 # =========================
-# Page: Patient (Step 2)
+# Step 2: Patient page
 # =========================
 if page == "Patient: Request & Upload":
     if st.session_state.role != "Patient":
@@ -175,8 +178,7 @@ if page == "Patient: Request & Upload":
     a_col, b_col = st.columns(2)
 
     with a_col:
-        req_a = st.button("Request from Clinic A", use_container_width=True)
-        if req_a:
+        if st.button("Request from Clinic A", use_container_width=True):
             if not state["requests"]["clinic_a"]["requested"]:
                 state["requests"]["clinic_a"]["requested"] = True
                 state["requests"]["clinic_a"]["requested_at"] = now_iso()
@@ -187,8 +189,7 @@ if page == "Patient: Request & Upload":
                 st.info("Clinic A already requested.")
 
     with b_col:
-        req_b = st.button("Request from Clinic B", use_container_width=True)
-        if req_b:
+        if st.button("Request from Clinic B", use_container_width=True):
             if not state["requests"]["clinic_b"]["requested"]:
                 state["requests"]["clinic_b"]["requested"] = True
                 state["requests"]["clinic_b"]["requested_at"] = now_iso()
@@ -199,7 +200,7 @@ if page == "Patient: Request & Upload":
                 st.info("Clinic B already requested.")
 
     st.markdown("### B) Upload documents you already have")
-    st.caption("Use **de-identified** sample documents for the demo (no real PHI).")
+    st.caption("Use de-identified sample documents for the demo (no real PHI).")
 
     uploaded = st.file_uploader(
         "Upload reports/scans (PDF, images, text)",
@@ -212,33 +213,121 @@ if page == "Patient: Request & Upload":
             st.warning("No files selected.")
         else:
             saved = save_uploaded_files(uploaded, case_dir / "patient_uploads")
-            # update state
-            state["uploads"]["patient_files"] = list_files(case_dir / "patient_uploads")
+            state = refresh_upload_lists(case_dir, state)
             log_event(state, f"Patient uploaded files: {', '.join(saved)}", "Patient")
             save_case_state(case_dir, state)
             st.success(f"Saved {len(saved)} file(s): {', '.join(saved)}")
 
     st.divider()
-    st.markdown("### Current case status (quick view)")
+    st.markdown("### Quick status")
     st.write({
         "clinic_a_requested": state["requests"]["clinic_a"]["requested"],
         "clinic_a_received": state["requests"]["clinic_a"]["received"],
         "clinic_b_requested": state["requests"]["clinic_b"]["requested"],
         "clinic_b_received": state["requests"]["clinic_b"]["received"],
-        "patient_files": list_files(case_dir / "patient_uploads"),
+        "patient_files": state["uploads"]["patient_files"],
     })
 
 # =========================
-# Page: Status (so you can see requests/files easily)
+# Step 3: Clinic A page
+# =========================
+elif page == "Clinic A: Notifications & Upload":
+    if st.session_state.role != "Clinic A":
+        st.warning("Switch Role to **Clinic A** to use this page.")
+        st.stop()
+
+    st.subheader("Step 3: Clinic A receives request and uploads records")
+
+    req = state["requests"]["clinic_a"]
+    if req["requested"]:
+        if not req["received"]:
+            st.success("🔔 Notification: Patient requested records from Clinic A.")
+        else:
+            st.info("✅ Records already sent to patient for this case.")
+        st.caption(f"Requested at: {req['requested_at']}")
+    else:
+        st.warning("No request from patient yet. (For demo: switch to Patient and request Clinic A.)")
+        st.stop()
+
+    st.markdown("### Upload records for this case")
+    uploaded = st.file_uploader(
+        "Upload Clinic A documents (PDF, images, text)",
+        type=["pdf", "png", "jpg", "jpeg", "txt"],
+        accept_multiple_files=True,
+        key="clinic_a_uploader",
+    )
+
+    if st.button("Send to ClearCare (Clinic A)", type="primary", use_container_width=True):
+        if not uploaded:
+            st.warning("No files selected.")
+        else:
+            saved = save_uploaded_files(uploaded, case_dir / "clinic_a_uploads")
+            state = refresh_upload_lists(case_dir, state)
+
+            # mark received
+            state["requests"]["clinic_a"]["received"] = True
+            state["requests"]["clinic_a"]["received_at"] = now_iso()
+
+            log_event(state, f"Clinic A uploaded files: {', '.join(saved)}", "Clinic A")
+            save_case_state(case_dir, state)
+            st.success(f"Sent {len(saved)} file(s): {', '.join(saved)}")
+
+    st.markdown("### Clinic A files on record")
+    st.write(state["uploads"]["clinic_a_files"])
+
+# =========================
+# Step 3: Clinic B page
+# =========================
+elif page == "Clinic B: Notifications & Upload":
+    if st.session_state.role != "Clinic B":
+        st.warning("Switch Role to **Clinic B** to use this page.")
+        st.stop()
+
+    st.subheader("Step 3: Clinic B receives request and uploads records")
+
+    req = state["requests"]["clinic_b"]
+    if req["requested"]:
+        if not req["received"]:
+            st.success("🔔 Notification: Patient requested records from Clinic B.")
+        else:
+            st.info("✅ Records already sent to patient for this case.")
+        st.caption(f"Requested at: {req['requested_at']}")
+    else:
+        st.warning("No request from patient yet. (For demo: switch to Patient and request Clinic B.)")
+        st.stop()
+
+    st.markdown("### Upload records for this case")
+    uploaded = st.file_uploader(
+        "Upload Clinic B documents (PDF, images, text)",
+        type=["pdf", "png", "jpg", "jpeg", "txt"],
+        accept_multiple_files=True,
+        key="clinic_b_uploader",
+    )
+
+    if st.button("Send to ClearCare (Clinic B)", type="primary", use_container_width=True):
+        if not uploaded:
+            st.warning("No files selected.")
+        else:
+            saved = save_uploaded_files(uploaded, case_dir / "clinic_b_uploads")
+            state = refresh_upload_lists(case_dir, state)
+
+            state["requests"]["clinic_b"]["received"] = True
+            state["requests"]["clinic_b"]["received_at"] = now_iso()
+
+            log_event(state, f"Clinic B uploaded files: {', '.join(saved)}", "Clinic B")
+            save_case_state(case_dir, state)
+            st.success(f"Sent {len(saved)} file(s): {', '.join(saved)}")
+
+    st.markdown("### Clinic B files on record")
+    st.write(state["uploads"]["clinic_b_files"])
+
+# =========================
+# Status page
 # =========================
 elif page == "Status":
     st.subheader("Case status")
     st.code(f"Case folder: {case_dir}", language="text")
-
-    # refresh live filesystem view
-    state["uploads"]["patient_files"] = list_files(case_dir / "patient_uploads")
-    state["uploads"]["clinic_a_files"] = list_files(case_dir / "clinic_a_uploads")
-    state["uploads"]["clinic_b_files"] = list_files(case_dir / "clinic_b_uploads")
+    state = refresh_upload_lists(case_dir, state)
     save_case_state(case_dir, state)
 
     col1, col2 = st.columns(2)
@@ -251,7 +340,7 @@ elif page == "Status":
 
     st.markdown("### Audit log")
     if state["audit"]:
-        for item in reversed(state["audit"][-30:]):
+        for item in reversed(state["audit"][-40:]):
             st.write(f"- **{item['ts']}** — *{item['actor']}*: {item['event']}")
     else:
         st.write("No events yet.")
