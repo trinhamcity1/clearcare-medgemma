@@ -1,0 +1,35 @@
+Patient Name: John Smith
+DOB: 01/12/1972
+MRN: A458392
+Email: john.smith@email.com
+Phone: (555) 123-4567
+Address: 123 Main Street, Houston TX
+
+Ordering Physician: Dr. Laura Chen
+Collection Date: 02/02/2026
+
+--- Blood Test Results ---
+Hemoglobin A1c (HbA1c): 8.4 %  (High)
+Reference Range: < 6.5 %
+
+Fasting Glucose: 178 mg/dL  (High)
+Reference Range: 70 - 99 mg/dL
+
+Total Cholesterol: 242 mg/dL  (High)
+LDL Cholesterol: 162 mg/dL  (High)
+HDL Cholesterol: 38 mg/dL  (Low)
+Triglycerides: 198 mg/dL  (High)
+
+Creatinine: 1.4 mg/dL  (Slightly Elevated)
+Estimated GFR: 58 mL/min/1.73m²
+
+--- Urine Test Results ---
+Urine Albumin: 68 mg/L  (Elevated)
+Albumin/Creatinine Ratio: 52 mg/g  (Abnormal)
+
+Ketones: Negative
+Glucose: Positive (Trace)
+
+--- Clinical Impression ---
+Findings are consistent with poor glycemic control and early signs of kidney stress.
+Recommend follow-up with primary care and nephrology if trends persist.

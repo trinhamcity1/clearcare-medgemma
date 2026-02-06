@@ -1,0 +1,30 @@
+Patient: John Smith
+DOB: 01-12-1972
+Patient ID: CARD-998271
+Phone: 555-987-6543
+
+Referring Clinic: Houston Cardiology Associates
+Cardiologist: Dr. Michael Alvarez
+Study Date: 02/04/2026
+
+--- Test Performed ---
+Resting Electrocardiogram (ECG)
+Transthoracic Echocardiogram
+
+--- ECG Findings ---
+Normal sinus rhythm
+Heart rate: 88 bpm
+No acute ST-segment elevation
+Occasional premature ventricular contractions (PVCs)
+
+--- Echocardiogram Findings ---
+Left Ventricular Ejection Fraction (LVEF): 50–55% (Low-normal)
+Mild left ventricular hypertrophy
+No significant valvular stenosis
+Mild mitral valve regurgitation
+
+--- Impression ---
+Cardiac function is borderline low-normal.
+Findings may be associated with long-standing hypertension and metabolic disease.
+Clinical correlation and lifestyle modification recommended.
+Consider stress testing if symptoms develop.
