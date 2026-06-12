@@ -1,0 +1,3 @@
+pip install -U transformers accelerate safetensors
+pip install torch
+pip install huggingface_hub
