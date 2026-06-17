@@ -26,13 +26,13 @@ SECTOR_ETFS = ['ARKK', 'SMH', 'QQQ', 'BITO']
 # Capital
 STARTING_CAPITAL = 100_000.0
 MAX_POSITION_PCT = 0.20
-MAX_POSITIONS = 5
+MAX_POSITIONS = 4
 COMMISSION_PCT = 0.001
 
 # Entry thresholds
-MIN_ENTRY_SIGNALS = 3
+MIN_ENTRY_SIGNALS = 2
 MIN_RR_RATIO = 0.75   # measured to T1; real edge is in the runner
-MIN_PRICE = 10.0      # no penny/broken stocks
+MIN_PRICE = 8
 
 # Tranches as % of total intended position
 TRANCHE_ENTRY = 0.35
@@ -40,26 +40,26 @@ TRANCHE_ADD1  = 0.25
 TRANCHE_ADD2  = 0.20
 TRANCHE_ADD3  = 0.15
 TRANCHE_BREAKOUT = 0.05
-MAX_ADDS = 3
+MAX_ADDS = 4
 
 # Profit levels
-PROFIT_T1 = 0.07
-PROFIT_T2 = 0.15
-PROFIT_T3 = 0.25
-SELL_FRACTION = 0.20   # sell 20% of total position at each target
+PROFIT_T1 = 0.05
+PROFIT_T2 = 0.18
+PROFIT_T3 = 0.2
+SELL_FRACTION = 0.2
 RUNNER_A_FRACTION = 0.20
 RUNNER_B_FRACTION = 0.20
 
 # Trailing stop ATR multipliers
-RUNNER_A_ATR = 1.5
-RUNNER_B_ATR = 3.0
+RUNNER_A_ATR = 2.0
+RUNNER_B_ATR = 4.0
 SQUEEZE_ATR  = 4.0
 
 # Stop losses
-HARD_STOP_PCT       = 0.07   # 7% below entry
-PORTFOLIO_HEAT_MAX  = 0.18   # pause entries if open positions collectively down >18%
-AVG_COST_STOP_PCT   = 0.40   # exit if avg cost down 40%
-DEAD_MONEY_DAYS     = 6
+HARD_STOP_PCT       = 0.06
+PORTFOLIO_HEAT_MAX  = 0.3
+AVG_COST_STOP_PCT   = 0.4
+DEAD_MONEY_DAYS     = 3
 DEAD_MONEY_MIN_GAIN = 0.03
 
 # Time limits (trading days)
@@ -85,9 +85,9 @@ VOL_SMA_SHORT = 10
 VOL_SMA_LONG  = 20
 
 # Catalyst detection (proxy signals)
-CATALYST_PRICE_MOVE = 0.03
-CATALYST_VOL_MULT   = 1.3
-PULLBACK_LOOKBACK   = 20   # days after catalyst to look for entry
+CATALYST_PRICE_MOVE = 0.04
+CATALYST_VOL_MULT   = 1.8
+PULLBACK_LOOKBACK   = 20
 
 # Support detection
 SUPPORT_ZONE_PCT    = 0.02   # 2% zone for confluence
@@ -95,5 +95,5 @@ SWING_WINDOW        = 5
 FIBO_LEVELS         = [0.236, 0.382, 0.5, 0.618, 0.786]
 
 # Backtest
-START_DATE = '2026-01-01'
+START_DATE = '2025-01-01'
 END_DATE   = '2026-06-17'

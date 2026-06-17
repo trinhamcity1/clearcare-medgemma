@@ -15,7 +15,7 @@ from risk.stop_loss import evaluate_all_stops
 
 
 class BacktestEngine:
-    def __init__(self):
+    def __init__(self, preloaded: dict = None):
         self.pm = PortfolioManager(config.STARTING_CAPITAL)
         self.equity_curve: List[dict] = []
         self.trade_log: List[dict] = []
@@ -23,11 +23,20 @@ class BacktestEngine:
         self.spy: pd.DataFrame = pd.DataFrame()
         self.vix: pd.DataFrame = pd.DataFrame()
         self.pending_entries: List[dict] = []
+        self._preloaded = preloaded
 
     # ------------------------------------------------------------------
     def load_data(self):
+        if self._preloaded:
+            self.spy      = self._preloaded['spy']
+            self.vix      = self._preloaded['vix']
+            self.all_data = self._preloaded['stocks']
+            return
+
         print("  Downloading market data...")
-        extra_start = '2025-07-01'  # need history for indicators
+        from datetime import datetime, timedelta
+        start_dt    = datetime.strptime(config.START_DATE, '%Y-%m-%d')
+        extra_start = (start_dt - timedelta(days=210)).strftime('%Y-%m-%d')
 
         self.spy = get_spy(extra_start, config.END_DATE)
         self.vix = get_vix(extra_start, config.END_DATE)
@@ -39,7 +48,6 @@ class BacktestEngine:
         for ticker, df in raw.items():
             self.all_data[ticker] = add_all_indicators(df, spy_close)
 
-        # Add indicators to SPY itself
         if not self.spy.empty:
             self.spy = add_all_indicators(self.spy, self.spy['Close'])
 
