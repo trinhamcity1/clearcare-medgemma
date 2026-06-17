@@ -60,6 +60,10 @@ def scan_universe(all_data: dict, spy_close: pd.Series,
         if score < min_catalyst:
             continue
 
+        # filter broken / penny stocks
+        if df['Close'].iloc[idx] < config.MIN_PRICE:
+            continue
+
         # pullback preferred but not a hard gate — catalyst quality gates entry
         pb = in_post_catalyst_pullback(df, idx)
         if not pb and score < 8:

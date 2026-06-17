@@ -1,9 +1,24 @@
 UNIVERSE = [
-    'RKLB', 'ASTS', 'IONQ', 'LUNR', 'PLTR',
-    'SMCI', 'NVDA', 'AMD', 'TSLA', 'MSTR',
-    'HOOD', 'SOFI', 'UPST', 'COIN', 'MARA',
-    'SOUN', 'BBAI', 'RGTI', 'CLSK', 'RIOT',
-    'CRWD', 'CELH', 'ENPH', 'WOLF', 'HIMS',
+    # Space & Aviation (strong catalysts, narrative stocks)
+    'RKLB', 'ASTS', 'LUNR', 'JOBY', 'ACHR', 'RCAT',
+    # Quantum Computing
+    'IONQ', 'RGTI', 'QUBT', 'QBTS',
+    # AI & Software
+    'PLTR', 'BBAI', 'SOUN', 'AI', 'PATH', 'GTLB', 'DOCN', 'KTOS',
+    # Semis & Hardware
+    'NVDA', 'AMD', 'SMCI', 'WOLF', 'MRVL', 'ON', 'AMAT',
+    # EV (only the ones with real volume & price)
+    'TSLA', 'RIVN',
+    # Crypto & Bitcoin Miners
+    'MSTR', 'COIN', 'MARA', 'CLSK', 'RIOT', 'HUT', 'CORZ', 'IREN', 'WULF',
+    # Fintech & Consumer
+    'HOOD', 'SOFI', 'UPST', 'AFRM', 'LMND', 'NU', 'SQ', 'PYPL',
+    # Biotech & Health
+    'RXRX', 'BEAM', 'CRSP', 'NTLA', 'HIMS', 'CELH', 'NVCR',
+    # High-Vol Growth
+    'CRWD', 'ENPH', 'CAVA', 'APLD', 'W', 'DKNG', 'OPEN',
+    # Large vol growth
+    'SHOP', 'SNOW', 'DDOG', 'NET', 'MDB',
 ]
 
 SECTOR_ETFS = ['ARKK', 'SMH', 'QQQ', 'BITO']
@@ -11,12 +26,13 @@ SECTOR_ETFS = ['ARKK', 'SMH', 'QQQ', 'BITO']
 # Capital
 STARTING_CAPITAL = 100_000.0
 MAX_POSITION_PCT = 0.20
-MAX_POSITIONS = 4
+MAX_POSITIONS = 5
 COMMISSION_PCT = 0.001
 
 # Entry thresholds
 MIN_ENTRY_SIGNALS = 3
 MIN_RR_RATIO = 0.75   # measured to T1; real edge is in the runner
+MIN_PRICE = 10.0      # no penny/broken stocks
 
 # Tranches as % of total intended position
 TRANCHE_ENTRY = 0.35
@@ -40,9 +56,10 @@ RUNNER_B_ATR = 3.0
 SQUEEZE_ATR  = 4.0
 
 # Stop losses
-HARD_STOP_PCT       = 0.08   # 8% below entry
+HARD_STOP_PCT       = 0.07   # 7% below entry
+PORTFOLIO_HEAT_MAX  = 0.18   # pause entries if open positions collectively down >18%
 AVG_COST_STOP_PCT   = 0.40   # exit if avg cost down 40%
-DEAD_MONEY_DAYS     = 7
+DEAD_MONEY_DAYS     = 6
 DEAD_MONEY_MIN_GAIN = 0.03
 
 # Time limits (trading days)

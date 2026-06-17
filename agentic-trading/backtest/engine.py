@@ -77,8 +77,9 @@ class BacktestEngine:
             # --- Update open positions ---
             self._update_positions(date, prices_snapshot)
 
-            # --- Scan for new entries (regime must be green) ---
-            if regime == 'GREEN' and len(self.pm.positions) < config.MAX_POSITIONS:
+            # --- Scan for new entries (regime must be green, portfolio not too hot) ---
+            heat_ok = self._portfolio_heat_ok(prices_snapshot)
+            if regime == 'GREEN' and len(self.pm.positions) < config.MAX_POSITIONS and heat_ok:
                 self._scan_entries(date, prices_snapshot)
 
             # --- Record equity ---
@@ -240,12 +241,31 @@ class BacktestEngine:
                     })
 
     # ------------------------------------------------------------------
+    def _portfolio_heat_ok(self, prices: dict) -> bool:
+        if not self.pm.positions:
+            return True
+        total_cost = 0.0
+        total_value = 0.0
+        for ticker, pos in self.pm.positions.items():
+            price = prices.get(ticker, 0)
+            for t in pos.tranches:
+                total_cost  += t.cost
+                total_value += t.shares * price
+            for r in pos.runners:
+                total_cost  += r.shares * pos.avg_cost
+                total_value += r.shares * price
+        if total_cost == 0:
+            return True
+        unrealized_pct = (total_value - total_cost) / total_cost
+        return unrealized_pct > -config.PORTFOLIO_HEAT_MAX
+
+    # ------------------------------------------------------------------
     def _scan_entries(self, date: pd.Timestamp,
                        prices: Dict[str, float]):
         already_watching = {e['ticker'] for e in self.pending_entries}
 
         candidates = scan_universe(self.all_data, self.spy['Close'],
-                                   date, min_catalyst=6)
+                                   date, min_catalyst=5)
 
         for cand in candidates:
             ticker = cand['ticker']
